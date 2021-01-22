@@ -19,11 +19,15 @@ Instructions can reference up to 128 32-bit register, known as r0-r128, or 256 1
 
 <p>
 In typical operation, a certain number of registers are "allocated" for each SIMD group, for example, r0-r12 might be available, but references to higher register numbers aren't valid, and may overlap/alias registers in other SIMD groups in undefined ways, so programs typically use the lowest register numbers available.
-I'd assume the less registers a program uses, the more simd_groups are able to run simultaneously, but this hasn't been verified. The ISA uses r1 as the link register.
+I'd assume the less registers a program uses, the more SIMD groups are able to run simultaneously, but this hasn't been verified. The ISA uses r1 as the link register.
 </p>
 
 <p>
-There are 256 32-bit uniform registers (u0-u255), which may similarly be referenced as their upper and lower halves (e.g. u0l, u0h). These typically contain global data, such as the addresses of buffers, or global constants like "threads_per_grid".
+There are 256 32-bit uniform registers (u0-u255), which may similarly be referenced as their upper and lower halves (e.g. u0l, u0h). These typically contain global constants, such as the addresses of buffers, or "threads_per_grid".
+</p>
+
+<p>
+There are 256 32-bit special registers (sr0-sr255). These are used for values like "thread_position_in_grid", "threads_per_threadgroup" and "simd_lane_id".
 </p>
 
 <p>
@@ -31,14 +35,14 @@ SP and the program counter don't use register numbers, and are only used by cert
 </p>
 
 <p>
-Instructions with 64-bit and 128-bit register operands use consecutive 32-bit registers (written as, e.g. r1_r2 or r3_r4_r5_r6). There is no alignment requirement for which 32-bit registers may be used as the starting point.
+Instructions with 64-bit, 96-bit, or 128-bit register operands use consecutive 32-bit registers (written as, e.g. r1_r2 or r3_r4_r5_r6). There is no alignment requirement for which 32-bit registers may be used as the starting point.
 </p>
 
 
 
 <h1>Instructions</h1>
 <p>Instructions are variable length, multiples of 2 bytes, up to ~10 bytes. They are written as little-endian, so bit 7 denotes the 0x80 bit of the first byte, and bit 8 denotes the 1 bit of the second byte. The right-to-left encoding seemed good at the time. It's nice that binary sequences can be read in the usual numeric way. I'm not sure.</p>
-<p>The colon is used as a bitwise concatenation operation, so if 'b' is a two bit fields 'a:b' is equivalent to '(a << 2) | b'.</p>
+<p>The colon is used as a bitwise concatenation operation, so if 'b' is a two bit fields 'a:b' is equivalent to '(a << 2) | b'. However, ':=' is used to indicate a store to a register.</p>
 <p>The flag in bit 7 is assumed to mean the same thing in most instructions - it's typically set if the following instruction depends on the result of the current instruction. It's not yet clear if this is its true meaning, nor if this is important to performance or correctness.</p>
 <h2>bitop</h2>
 <p><strong>bitop</strong> performs an arbitrary 32-bit or 16-bit bitwise operation on one or two inputs, using a truth table encoded in the instruction. This is used to implement common operations like "and" and "not", as well as to move values from uniform registers to SIMD registers, or between SIMD registers.</p>
@@ -79,8 +83,8 @@ d := a + (c << shift)
 </pre>
 
 <h2>madd</h2>
-<p><strong>madd</strong> performs a 32-bit or 16-bit integer multipy-add (a * b + c) or multiply-subtract operation (a * b - c). The final operand may also be shifted left by 1 to 4.</p>
-<p>TODO: 64-bit is assumed incorrect/invalid - how does that behave?</p>
+<p><strong>madd</strong> performs a 32-bit or 16-bit integer multipy-add (a * b + c) or multiply-subtract operation (a * b - c). The final operand (c) may also be shifted left by 1 to 4. This can do 32x32->64 bit multiplies, but a multi-instruction sequence is used for 32x64 and 64x64 multiplies.</p>
+<p>TODO: pseudocode is probably wrong for 64-bit.</p>
 <table class="opcodebits"><thead><tr><td class="left">63</td><td>62</td><td>61</td><td>60</td><td>59</td><td>58</td><td>57</td><td class="right">56</td><td class="left">55</td><td>54</td><td>53</td><td>52</td><td>51</td><td>50</td><td>49</td><td class="right">48</td><td class="left">47</td><td>46</td><td>45</td><td>44</td><td>43</td><td>42</td><td>41</td><td class="right">40</td><td class="left">39</td><td>38</td><td>37</td><td>36</td><td>35</td><td>34</td><td>33</td><td class="right">32</td><td class="left">31</td><td>30</td><td>29</td><td>28</td><td>27</td><td>26</td><td>25</td><td class="right">24</td><td class="left">23</td><td>22</td><td>21</td><td>20</td><td>19</td><td>18</td><td>17</td><td class="right">16</td><td class="left">15</td><td>14</td><td>13</td><td>12</td><td>11</td><td>10</td><td>9</td><td class="right">8</td><td class="left">7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td class="right">0</td></tr></thead><tbody><tr><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="2" class="left right">dstx</td><td colspan="2" class="left right">src1x</td><td colspan="2" class="left right">src2x</td><td colspan="2" class="left right">src3x</td><td colspan="2" class="left right">s2</td><td colspan="1" class="left right">?</td><td colspan="11" class="left right">src3</td><td colspan="1" class="left right">s1</td><td colspan="11" class="left right">src2</td><td colspan="1" class="left right">n</td><td colspan="11" class="left right">src1</td><td colspan="1" class="left right">0</td><td colspan="7" class="left right">dst</td><td colspan="1" class="left right">?</td><td colspan="1" class="left">0</td><td colspan="1" class="">0</td><td colspan="1" class="">1</td><td colspan="1" class="">1</td><td colspan="1" class="">1</td><td colspan="1" class="">1</td><td colspan="1" class="right">0</td></tr></tbody></table>
 
 <pre>
@@ -127,8 +131,33 @@ reg32[r] := imm32
 reg32[h:r] := imm32
 </pre>
 
-<h2>bl (register)</h2>
-<p><strong>bl</strong> branches to the address in the given 32-bit register, and sets <strong>r1</strong> to the return address.</p>
+<h2>mov (from SR)</h2>
+<table class="opcodebits"><thead><tr><td class="left">31</td><td>30</td><td>29</td><td>28</td><td>27</td><td>26</td><td>25</td><td class="right">24</td><td class="left">23</td><td>22</td><td>21</td><td>20</td><td>19</td><td>18</td><td>17</td><td class="right">16</td><td class="left">15</td><td>14</td><td>13</td><td>12</td><td>11</td><td>10</td><td>9</td><td class="right">8</td><td class="left">7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td class="right">0</td></tr></thead><tbody><tr><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="2" class="left right">dstx</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="2" class="left right">srx</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="6" class="left right">sr</td><td colspan="1" class="left right">0</td><td colspan="7" class="left right">dst</td><td colspan="1" class="left right">?</td><td colspan="1" class="left">1</td><td colspan="1" class="">1</td><td colspan="1" class="">1</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="">1</td><td colspan="1" class="right">0</td></tr></tbody></table>
+
+<pre>
+d = bitop_dst(dstx:dst)
+
+d := sreg32[srx:sr]
+</pre>
+
+<h2>stop</h2>
+<p><strong>stop</strong> terminates kernel execution</p>
+<table class="opcodebits"><thead><tr><td class="left">15</td><td>14</td><td>13</td><td>12</td><td>11</td><td>10</td><td>9</td><td class="right">8</td><td class="left">7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td class="right">0</td></tr></thead><tbody><tr><td colspan="1" class="left">0</td><td colspan="1" class="">0</td><td colspan="1" class="right">0</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left">1</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="">1</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="right">0</td></tr></tbody></table>
+
+<pre>
+stop()
+</pre>
+
+<h2>trap</h2>
+<p><strong>trap</strong> is used for padding between functions - behaviour unknown.</p>
+<table class="opcodebits"><thead><tr><td class="left">15</td><td>14</td><td>13</td><td>12</td><td>11</td><td>10</td><td>9</td><td class="right">8</td><td class="left">7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td class="right">0</td></tr></thead><tbody><tr><td colspan="1" class="left">0</td><td colspan="1" class="">0</td><td colspan="1" class="right">0</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left">0</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="">1</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="right">0</td></tr></tbody></table>
+
+<pre>
+TODO
+</pre>
+
+<h2>call (register)</h2>
+<p><strong>call</strong> branches to the address in the given 32-bit register, and sets <strong>r1</strong> (the link register) to the return address.</p>
 <p>TODO: what happens if the simd register contains different values?</p>
 <table class="opcodebits"><thead><tr><td class="left">15</td><td>14</td><td>13</td><td>12</td><td>11</td><td>10</td><td>9</td><td class="right">8</td><td class="left">7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td class="right">0</td></tr></thead><tbody><tr><td colspan="7" class="left right">reg32</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left">0</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="">1</td><td colspan="1" class="">0</td><td colspan="1" class="right">0</td></tr></tbody></table>
 
@@ -138,7 +167,8 @@ branch_to(reg32)
 </pre>
 
 <h2>ret</h2>
-<p><strong>ret</strong> branches to the address in the given 32-bit register (typically r1) (TODO: predictor/disassembler hint, or actually distinct from branch?)</p>
+<p><strong>ret</strong> branches to the address in the given 32-bit register (typically r1)</p>
+<p>TODO: predictor/disassembler hint, or different behavior from branch?</p>
 <p>TODO: what happens if the simd register contains different values?</p>
 <table class="opcodebits"><thead><tr><td class="left">15</td><td>14</td><td>13</td><td>12</td><td>11</td><td>10</td><td>9</td><td class="right">8</td><td class="left">7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td class="right">0</td></tr></thead><tbody><tr><td colspan="7" class="left right">reg32</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left">0</td><td colspan="1" class="">0</td><td colspan="1" class="">1</td><td colspan="1" class="">0</td><td colspan="1" class="">1</td><td colspan="1" class="">0</td><td colspan="1" class="right">0</td></tr></tbody></table>
 
@@ -172,9 +202,6 @@ Unsigned immediate from concatenation: h:imm</p>
 <p>
 <table class="opcodebits"><thead><tr><td>12</td><td>11</td><td class="left">10</td><td>9</td><td>8</td><td>7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td>0</td></tr></thead><tbody><tr><td colspan="2" class="left right">h</td><td colspan="1" class="left right">sx</td><td colspan="1" class="left">1</td><td colspan="1" class="right">0</td><td colspan="2" class="left right">!= 0</td><td colspan="5" class="left right">reg32</td><td colspan="1" class="left right">?</td></tr></tbody></table>
 32-bit register number from concatenation: h:reg32</p>
-<p>
-<table class="opcodebits"><thead><tr><td>12</td><td>11</td><td class="left">10</td><td>9</td><td>8</td><td>7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td>0</td></tr></thead><tbody><tr><td colspan="2" class="left right">h</td><td colspan="1" class="left right">?</td><td colspan="1" class="left">1</td><td colspan="1" class="right">1</td><td colspan="2" class="left right">!= 0</td><td colspan="5" class="left right">reg64</td><td colspan="1" class="left right">?</td></tr></tbody></table>
-64-bit register number from concatenation: h:reg64</p>
 <h2>bitop_src</h2>
 <p>As used by bitop. The "!= 0" field should be encoded as 0b01. Registers are zero-extended.</p>
 <p>
@@ -192,4 +219,37 @@ Unsigned immediate from concatenation: h:imm</p>
 <p>
 <table class="opcodebits"><thead><tr><td>11</td><td>10</td><td class="left">9</td><td>8</td><td>7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td>0</td></tr></thead><tbody><tr><td colspan="2" class="left right">h</td><td colspan="1" class="left">1</td><td colspan="1" class="right">0</td><td colspan="2" class="left right">!= 0</td><td colspan="5" class="left right">reg32</td><td colspan="1" class="left right">?</td></tr></tbody></table>
 32-bit register number from concatenation: h:reg32</p>
+<h1>Special Registers</h1>
+
+<p>TODO: It's unclear if these have special meaning to the hardware, or are configured by the driver, but I'm guessing the former, as the register numbers are constant, unlike the uniform registers.</p>
+
+<table>
+<tr><td>SR0</td><td>threadgroup_position_in_grid.x</td></tr>
+<tr><td>SR1</td><td>threadgroup_position_in_grid.y</td></tr>
+<tr><td>SR2</td><td>threadgroup_position_in_grid.z</td></tr>
+
+<tr><td>SR4</td><td>threads_per_threadgroup.x</td></tr>
+<tr><td>SR5</td><td>threads_per_threadgroup.y</td></tr>
+<tr><td>SR6</td><td>threads_per_threadgroup.z</td></tr>
+
+<tr><td>SR8</td><td>dispatch_threads_per_threadgroup.x</td></tr>
+<tr><td>SR9</td><td>dispatch_threads_per_threadgroup.y</td></tr>
+<tr><td>SR10</td><td>dispatch_threads_per_threadgroup.z</td></tr>
+
+<tr><td>SR48</td><td>thread_position_in_threadgroup.x</td></tr>
+<tr><td>SR49</td><td>thread_position_in_threadgroup.y</td></tr>
+<tr><td>SR50</td><td>thread_position_in_threadgroup.z</td></tr>
+
+<tr><td>SR51</td><td>thread_index_in_threadgroup</td></tr>
+<tr><td>SR52</td><td>thread_index_in_simdgroup</td></tr>
+<tr><td>SR53</td><td>simdgroup_index_in_threadgroup</td></tr>
+
+<tr><td>SR80</td><td>thread_position_in_grid.x</td></tr>
+<tr><td>SR81</td><td>thread_position_in_grid.y</td></tr>
+<tr><td>SR82</td><td>thread_position_in_grid.z</td></tr>
+</table>
+
+<h1>Thanks</h1>
+
+<p>This is based on <a href="https://github.com/AsahiLinux/gpu">AsahiLinux/gpu</a> and <a href="https://github.com/tellowkrinkle/mtl-gpu-asmcheck">mtl-gpu-asmcheck</a> by Alyssa Rosenzweig and tellowkrinkle respectively. Many thanks to them.</p>
 </body></html>
