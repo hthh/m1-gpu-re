@@ -1,0 +1,195 @@
+<html>
+<head><title>Apple M1 GPU ISA</title><style>
+table.opcodebits { border-collapse: collapse; text-align: center; font-family: sans-serif; font-size: small; margin-bottom: 4px; }
+table.opcodebits thead td { font-size: smaller; width: 22px; }
+table.opcodebits tbody td { border-top: 1px solid #000; border-bottom: 1px solid #000; vertical-align: middle; }
+/* table.opcodebits tbody */ td.left { border-left: 1px solid #000; }
+/* table.opcodebits tbody */ td.right { border-right: 1px solid #000; }
+pre { margin-left: 15px; }
+</style></head><body>
+<h1>Registers</h1>
+
+<p>
+The Apple M1 GPU ISA state consists of general purpose SIMD registers (per-simd-group), uniform registers (global), a stack-pointer, a program counter, and special registers.
+</p>
+
+<p>
+Instructions can reference up to 128 32-bit register, known as r0-r128, or 256 16-bit registers (the lower and upper halves of the 32-bit registers, r0l, r0h, throught to r127h). It uses a SIMD width of 32, so r0 generally refers to 32 32-bit values, and r0l refers to 32 16-bit registers.
+</p>
+
+<p>
+In typical operation, a certain number of registers are "allocated" for each SIMD group, for example, r0-r12 might be available, but references to higher register numbers aren't valid, and may overlap/alias registers in other SIMD groups in undefined ways, so programs typically use the lowest register numbers available.
+I'd assume the less registers a program uses, the more simd_groups are able to run simultaneously, but this hasn't been verified. The ISA uses r1 as the link register.
+</p>
+
+<p>
+There are 256 32-bit uniform registers (u0-u255), which may similarly be referenced as their upper and lower halves (e.g. u0l, u0h). These typically contain global data, such as the addresses of buffers, or global constants like "threads_per_grid".
+</p>
+
+<p>
+SP and the program counter don't use register numbers, and are only used by certain instructions.
+</p>
+
+<p>
+Instructions with 64-bit and 128-bit register operands use consecutive 32-bit registers (written as, e.g. r1_r2 or r3_r4_r5_r6). There is no alignment requirement for which 32-bit registers may be used as the starting point.
+</p>
+
+
+
+<h1>Instructions</h1>
+<p>Instructions are variable length, multiples of 2 bytes, up to ~10 bytes. They are written as little-endian, so bit 7 denotes the 0x80 bit of the first byte, and bit 8 denotes the 1 bit of the second byte. The right-to-left encoding seemed good at the time. It's nice that binary sequences can be read in the usual numeric way. I'm not sure.</p>
+<p>The colon is used as a bitwise concatenation operation, so if 'b' is a two bit fields 'a:b' is equivalent to '(a << 2) | b'.</p>
+<p>The flag in bit 7 is assumed to mean the same thing in most instructions - it's typically set if the following instruction depends on the result of the current instruction. It's not yet clear if this is its true meaning, nor if this is important to performance or correctness.</p>
+<h2>bitop</h2>
+<p><strong>bitop</strong> performs an arbitrary 32-bit or 16-bit bitwise operation on one or two inputs, using a truth table encoded in the instruction. This is used to implement common operations like "and" and "not", as well as to move values from uniform registers to SIMD registers, or between SIMD registers.</p>
+<table class="opcodebits"><thead><tr><td class="left">47</td><td>46</td><td>45</td><td>44</td><td>43</td><td>42</td><td>41</td><td class="right">40</td><td class="left">39</td><td>38</td><td>37</td><td>36</td><td>35</td><td>34</td><td>33</td><td class="right">32</td><td class="left">31</td><td>30</td><td>29</td><td>28</td><td>27</td><td>26</td><td>25</td><td class="right">24</td><td class="left">23</td><td>22</td><td>21</td><td>20</td><td>19</td><td>18</td><td>17</td><td class="right">16</td><td class="left">15</td><td>14</td><td>13</td><td>12</td><td>11</td><td>10</td><td>9</td><td class="right">8</td><td class="left">7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td class="right">0</td></tr></thead><tbody><tr><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="2" class="left right">dstx</td><td colspan="2" class="left right">src1x</td><td colspan="2" class="left right">src2x</td><td colspan="1" class="left right">tt3</td><td colspan="1" class="left right">tt2</td><td colspan="10" class="left right">src2</td><td colspan="1" class="left right">tt1</td><td colspan="1" class="left right">tt0</td><td colspan="10" class="left right">src1</td><td colspan="1" class="left right">0</td><td colspan="7" class="left right">dst</td><td colspan="1" class="left right">?</td><td colspan="1" class="left">1</td><td colspan="1" class="">1</td><td colspan="1" class="">1</td><td colspan="1" class="">1</td><td colspan="1" class="">1</td><td colspan="1" class="">1</td><td colspan="1" class="right">0</td></tr></tbody></table>
+
+<pre>
+shift = s2:s1
+a = bitop_src(src1x:src1)
+b = bitop_src(src2x:src2)
+d = bitop_dst(dstx:dst)
+
+result = 0
+if tt0: result |= ~a & ~b
+if tt1: result |=  a & ~b
+if tt2: result |= ~a &  b
+if tt3: result |=  a &  b
+
+d := result
+</pre>
+
+<h2>add</h2>
+<p><strong>add</strong> performs a 64-bit, 32-bit or 16-bit integer add or subtract operation. The final operand may also be shifted left by 1 to 4.</p>
+<p>TODO: why does the compiler emit 64-bit subtracts, 64-bit add-shifts, but not plain 64-bit addition instructions? I guess the perf is interesting?</p>
+<table class="opcodebits"><thead><tr><td class="left">63</td><td>62</td><td>61</td><td>60</td><td>59</td><td>58</td><td>57</td><td class="right">56</td><td class="left">55</td><td>54</td><td>53</td><td>52</td><td>51</td><td>50</td><td>49</td><td class="right">48</td><td class="left">47</td><td>46</td><td>45</td><td>44</td><td>43</td><td>42</td><td>41</td><td class="right">40</td><td class="left">39</td><td>38</td><td>37</td><td>36</td><td>35</td><td>34</td><td>33</td><td class="right">32</td><td class="left">31</td><td>30</td><td>29</td><td>28</td><td>27</td><td>26</td><td>25</td><td class="right">24</td><td class="left">23</td><td>22</td><td>21</td><td>20</td><td>19</td><td>18</td><td>17</td><td class="right">16</td><td class="left">15</td><td>14</td><td>13</td><td>12</td><td>11</td><td>10</td><td>9</td><td class="right">8</td><td class="left">7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td class="right">0</td></tr></thead><tbody><tr><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="2" class="left right">s2</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="2" class="left right">dstx</td><td colspan="2" class="left right">src1x</td><td colspan="2" class="left right">src2x</td><td colspan="1" class="left right">s1</td><td colspan="11" class="left right">src2</td><td colspan="1" class="left right">n</td><td colspan="11" class="left right">src1</td><td colspan="1" class="left right">0</td><td colspan="7" class="left right">dst</td><td colspan="1" class="left right">?</td><td colspan="1" class="left">0</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="">1</td><td colspan="1" class="">1</td><td colspan="1" class="">1</td><td colspan="1" class="right">0</td></tr></tbody></table>
+
+<pre>
+shift = s2:s1
+
+a = add_src(src1x:src1)
+b = add_src(src2x:src2)
+
+d = add_dst(dstx:dst)
+
+if n == 1:
+  c = -c
+
+d := a + (c << shift)
+</pre>
+
+<h2>madd</h2>
+<p><strong>madd</strong> performs a 32-bit or 16-bit integer multipy-add (a * b + c) or multiply-subtract operation (a * b - c). The final operand may also be shifted left by 1 to 4.</p>
+<p>TODO: 64-bit is assumed incorrect/invalid - how does that behave?</p>
+<table class="opcodebits"><thead><tr><td class="left">63</td><td>62</td><td>61</td><td>60</td><td>59</td><td>58</td><td>57</td><td class="right">56</td><td class="left">55</td><td>54</td><td>53</td><td>52</td><td>51</td><td>50</td><td>49</td><td class="right">48</td><td class="left">47</td><td>46</td><td>45</td><td>44</td><td>43</td><td>42</td><td>41</td><td class="right">40</td><td class="left">39</td><td>38</td><td>37</td><td>36</td><td>35</td><td>34</td><td>33</td><td class="right">32</td><td class="left">31</td><td>30</td><td>29</td><td>28</td><td>27</td><td>26</td><td>25</td><td class="right">24</td><td class="left">23</td><td>22</td><td>21</td><td>20</td><td>19</td><td>18</td><td>17</td><td class="right">16</td><td class="left">15</td><td>14</td><td>13</td><td>12</td><td>11</td><td>10</td><td>9</td><td class="right">8</td><td class="left">7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td class="right">0</td></tr></thead><tbody><tr><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="2" class="left right">dstx</td><td colspan="2" class="left right">src1x</td><td colspan="2" class="left right">src2x</td><td colspan="2" class="left right">src3x</td><td colspan="2" class="left right">s2</td><td colspan="1" class="left right">?</td><td colspan="11" class="left right">src3</td><td colspan="1" class="left right">s1</td><td colspan="11" class="left right">src2</td><td colspan="1" class="left right">n</td><td colspan="11" class="left right">src1</td><td colspan="1" class="left right">0</td><td colspan="7" class="left right">dst</td><td colspan="1" class="left right">?</td><td colspan="1" class="left">0</td><td colspan="1" class="">0</td><td colspan="1" class="">1</td><td colspan="1" class="">1</td><td colspan="1" class="">1</td><td colspan="1" class="">1</td><td colspan="1" class="right">0</td></tr></tbody></table>
+
+<pre>
+shift = s2:s1
+
+a = add_src(src1x:src1)
+b = add_src(src2x:src2)
+c = add_src(src3x:src3)
+
+d = add_dst(dstx:dst)
+
+
+if n == 1:
+  c = -c
+
+d := a * b + (c << shift)
+</pre>
+
+<h2>mov (16-bit immediate)</h2>
+<p><strong>mov (16-bit immediate)</strong> sets a 16-bit register to an immediate value. Only r0l-r31h may be used in the short variant.</p>
+<table class="opcodebits"><thead><tr><td class="left">31</td><td>30</td><td>29</td><td>28</td><td>27</td><td>26</td><td>25</td><td class="right">24</td><td class="left">23</td><td>22</td><td>21</td><td>20</td><td>19</td><td>18</td><td>17</td><td class="right">16</td><td class="left">15</td><td>14</td><td>13</td><td>12</td><td>11</td><td>10</td><td>9</td><td class="right">8</td><td class="left">7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td class="right">0</td></tr></thead><tbody><tr><td colspan="16" class="left right">imm16</td><td colspan="1" class="left right">0</td><td colspan="6" class="left right">r</td><td colspan="1" class="left right">0</td><td colspan="1" class="left right">?</td><td colspan="1" class="left">1</td><td colspan="1" class="">1</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="">1</td><td colspan="1" class="right">0</td></tr></tbody></table>
+
+<pre>
+reg16[r] := imm16
+</pre>
+
+<table class="opcodebits"><thead><tr><td class="left">47</td><td>46</td><td>45</td><td>44</td><td>43</td><td>42</td><td>41</td><td class="right">40</td><td class="left">39</td><td>38</td><td>37</td><td>36</td><td>35</td><td>34</td><td>33</td><td class="right">32</td><td class="left">31</td><td>30</td><td>29</td><td>28</td><td>27</td><td>26</td><td>25</td><td class="right">24</td><td class="left">23</td><td>22</td><td>21</td><td>20</td><td>19</td><td>18</td><td>17</td><td class="right">16</td><td class="left">15</td><td>14</td><td>13</td><td>12</td><td>11</td><td>10</td><td>9</td><td class="right">8</td><td class="left">7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td class="right">0</td></tr></thead><tbody><tr><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="2" class="left right">h</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="16" class="left right">imm16</td><td colspan="1" class="left right">1</td><td colspan="6" class="left right">r</td><td colspan="1" class="left right">0</td><td colspan="1" class="left right">?</td><td colspan="1" class="left">1</td><td colspan="1" class="">1</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="">1</td><td colspan="1" class="right">0</td></tr></tbody></table>
+
+<pre>
+reg16[h:r] := imm16
+</pre>
+
+<h2>mov (32-bit immediate)</h2>
+<p><strong>mov (32-bit immediate)</strong> sets a 32-bit register to an immediate value. Only r0-r31 may be used in the short variant.</p>
+<table class="opcodebits"><thead><tr><td class="left">47</td><td>46</td><td>45</td><td>44</td><td>43</td><td>42</td><td>41</td><td class="right">40</td><td class="left">39</td><td>38</td><td>37</td><td>36</td><td>35</td><td>34</td><td>33</td><td class="right">32</td><td class="left">31</td><td>30</td><td>29</td><td>28</td><td>27</td><td>26</td><td>25</td><td class="right">24</td><td class="left">23</td><td>22</td><td>21</td><td>20</td><td>19</td><td>18</td><td>17</td><td class="right">16</td><td class="left">15</td><td>14</td><td>13</td><td>12</td><td>11</td><td>10</td><td>9</td><td class="right">8</td><td class="left">7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td class="right">0</td></tr></thead><tbody><tr><td colspan="32" class="left right">imm32</td><td colspan="1" class="left right">0</td><td colspan="5" class="left right">r</td><td colspan="1" class="left">0</td><td colspan="1" class="right">1</td><td colspan="1" class="left right">?</td><td colspan="1" class="left">1</td><td colspan="1" class="">1</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="">1</td><td colspan="1" class="right">0</td></tr></tbody></table>
+
+<pre>
+reg32[r] := imm32
+</pre>
+
+<table class="opcodebits"><thead><tr><td class="left">63</td><td>62</td><td>61</td><td>60</td><td>59</td><td>58</td><td>57</td><td class="right">56</td><td class="left">55</td><td>54</td><td>53</td><td>52</td><td>51</td><td>50</td><td>49</td><td class="right">48</td><td class="left">47</td><td>46</td><td>45</td><td>44</td><td>43</td><td>42</td><td>41</td><td class="right">40</td><td class="left">39</td><td>38</td><td>37</td><td>36</td><td>35</td><td>34</td><td>33</td><td class="right">32</td><td class="left">31</td><td>30</td><td>29</td><td>28</td><td>27</td><td>26</td><td>25</td><td class="right">24</td><td class="left">23</td><td>22</td><td>21</td><td>20</td><td>19</td><td>18</td><td>17</td><td class="right">16</td><td class="left">15</td><td>14</td><td>13</td><td>12</td><td>11</td><td>10</td><td>9</td><td class="right">8</td><td class="left">7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td class="right">0</td></tr></thead><tbody><tr><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="2" class="left right">h</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="32" class="left right">imm32</td><td colspan="1" class="left right">1</td><td colspan="5" class="left right">r</td><td colspan="1" class="left">0</td><td colspan="1" class="right">1</td><td colspan="1" class="left right">?</td><td colspan="1" class="left">1</td><td colspan="1" class="">1</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="">1</td><td colspan="1" class="right">0</td></tr></tbody></table>
+
+<pre>
+reg32[h:r] := imm32
+</pre>
+
+<h2>bl (register)</h2>
+<p><strong>bl</strong> branches to the address in the given 32-bit register, and sets <strong>r1</strong> to the return address.</p>
+<p>TODO: what happens if the simd register contains different values?</p>
+<table class="opcodebits"><thead><tr><td class="left">15</td><td>14</td><td>13</td><td>12</td><td>11</td><td>10</td><td>9</td><td class="right">8</td><td class="left">7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td class="right">0</td></tr></thead><tbody><tr><td colspan="7" class="left right">reg32</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left">0</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="">1</td><td colspan="1" class="">0</td><td colspan="1" class="right">0</td></tr></tbody></table>
+
+<pre>
+r1 = pc + 2
+branch_to(reg32)
+</pre>
+
+<h2>ret</h2>
+<p><strong>ret</strong> branches to the address in the given 32-bit register (typically r1) (TODO: predictor/disassembler hint, or actually distinct from branch?)</p>
+<p>TODO: what happens if the simd register contains different values?</p>
+<table class="opcodebits"><thead><tr><td class="left">15</td><td>14</td><td>13</td><td>12</td><td>11</td><td>10</td><td>9</td><td class="right">8</td><td class="left">7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td class="right">0</td></tr></thead><tbody><tr><td colspan="7" class="left right">reg32</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left">0</td><td colspan="1" class="">0</td><td colspan="1" class="">1</td><td colspan="1" class="">0</td><td colspan="1" class="">1</td><td colspan="1" class="">0</td><td colspan="1" class="right">0</td></tr></tbody></table>
+
+<pre>
+branch_to(reg32)
+</pre>
+
+<h1>Operands</h1>
+<h2>add_dst</h2>
+<table class="opcodebits"><thead><tr><td>8</td><td>7</td><td class="left">6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td>0</td></tr></thead><tbody><tr><td colspan="8" class="left right">reg16</td><td colspan="1" class="left right">0</td></tr></tbody></table>
+<table class="opcodebits"><thead><tr><td>8</td><td>7</td><td class="left">6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td>0</td></tr></thead><tbody><tr><td colspan="7" class="left right">reg32</td><td colspan="1" class="left">0</td><td colspan="1" class="right">1</td></tr></tbody></table>
+<table class="opcodebits"><thead><tr><td>8</td><td>7</td><td class="left">6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td>0</td></tr></thead><tbody><tr><td colspan="7" class="left right">reg64</td><td colspan="1" class="left">1</td><td colspan="1" class="right">1</td></tr></tbody></table>
+<h2>bitop_dst</h2>
+<table class="opcodebits"><thead><tr><td>8</td><td>7</td><td class="left">6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td>0</td></tr></thead><tbody><tr><td colspan="8" class="left right">reg16</td><td colspan="1" class="left right">0</td></tr></tbody></table>
+<table class="opcodebits"><thead><tr><td>8</td><td>7</td><td class="left">6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td>0</td></tr></thead><tbody><tr><td colspan="7" class="left right">reg32</td><td colspan="1" class="left">0</td><td colspan="1" class="right">1</td></tr></tbody></table>
+<h2>add_src</h2>
+<p>As used by madd/add. Register is sign-extended if sx is 1, zero-extended if sx is 0. The "!= 0" field should be encoded as 0b01.</p>
+<p>TODO: What do the 0b10 and 0b11 modifiers do?</p>
+<p>
+<table class="opcodebits"><thead><tr><td>12</td><td>11</td><td class="left">10</td><td>9</td><td>8</td><td>7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td>0</td></tr></thead><tbody><tr><td colspan="2" class="left right">h</td><td colspan="1" class="left right">?</td><td colspan="1" class="left">0</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="right">0</td><td colspan="6" class="left right">imm</td></tr></tbody></table>
+Unsigned immediate from concatenation: h:imm</p>
+<p>
+<table class="opcodebits"><thead><tr><td>12</td><td>11</td><td class="left">10</td><td>9</td><td>8</td><td>7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td>0</td></tr></thead><tbody><tr><td colspan="2" class="left right">h</td><td colspan="1" class="left right">sx</td><td colspan="1" class="left">0</td><td colspan="1" class="right">0</td><td colspan="2" class="left right">!= 0</td><td colspan="6" class="left right">reg16</td></tr></tbody></table>
+16-bit register number from concatenation: h:reg16</p>
+<p>
+<table class="opcodebits"><thead><tr><td>12</td><td>11</td><td class="left">10</td><td>9</td><td>8</td><td>7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td>0</td></tr></thead><tbody><tr><td colspan="2" class="left right">h</td><td colspan="1" class="left right">sx</td><td colspan="1" class="left">0</td><td colspan="1" class="">1</td><td colspan="1" class="right">0</td><td colspan="1" class="left right">e</td><td colspan="6" class="left right">ureg16</td></tr></tbody></table>
+16-bit uniform register number from concatenation: e:h:ureg16</p>
+<p>
+<table class="opcodebits"><thead><tr><td>12</td><td>11</td><td class="left">10</td><td>9</td><td>8</td><td>7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td>0</td></tr></thead><tbody><tr><td colspan="2" class="left right">h</td><td colspan="1" class="left right">sx</td><td colspan="1" class="left">0</td><td colspan="1" class="">1</td><td colspan="1" class="right">1</td><td colspan="1" class="left right">e</td><td colspan="5" class="left right">ureg32</td><td colspan="1" class="left right">?</td></tr></tbody></table>
+32-bit uniform register number from concatenation: e:h:ureg32</p>
+<p>
+<table class="opcodebits"><thead><tr><td>12</td><td>11</td><td class="left">10</td><td>9</td><td>8</td><td>7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td>0</td></tr></thead><tbody><tr><td colspan="2" class="left right">h</td><td colspan="1" class="left right">sx</td><td colspan="1" class="left">1</td><td colspan="1" class="right">0</td><td colspan="2" class="left right">!= 0</td><td colspan="5" class="left right">reg32</td><td colspan="1" class="left right">?</td></tr></tbody></table>
+32-bit register number from concatenation: h:reg32</p>
+<p>
+<table class="opcodebits"><thead><tr><td>12</td><td>11</td><td class="left">10</td><td>9</td><td>8</td><td>7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td>0</td></tr></thead><tbody><tr><td colspan="2" class="left right">h</td><td colspan="1" class="left right">?</td><td colspan="1" class="left">1</td><td colspan="1" class="right">1</td><td colspan="2" class="left right">!= 0</td><td colspan="5" class="left right">reg64</td><td colspan="1" class="left right">?</td></tr></tbody></table>
+64-bit register number from concatenation: h:reg64</p>
+<h2>bitop_src</h2>
+<p>As used by bitop. The "!= 0" field should be encoded as 0b01. Registers are zero-extended.</p>
+<p>
+<table class="opcodebits"><thead><tr><td>11</td><td>10</td><td class="left">9</td><td>8</td><td>7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td>0</td></tr></thead><tbody><tr><td colspan="2" class="left right">h</td><td colspan="1" class="left">0</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="right">0</td><td colspan="6" class="left right">imm</td></tr></tbody></table>
+Unsigned immediate from concatenation: h:imm</p>
+<p>
+<table class="opcodebits"><thead><tr><td>11</td><td>10</td><td class="left">9</td><td>8</td><td>7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td>0</td></tr></thead><tbody><tr><td colspan="2" class="left right">h</td><td colspan="1" class="left">0</td><td colspan="1" class="right">0</td><td colspan="2" class="left right">!= 0</td><td colspan="6" class="left right">reg16</td></tr></tbody></table>
+16-bit register number from concatenation: h:reg16</p>
+<p>
+<table class="opcodebits"><thead><tr><td>11</td><td>10</td><td class="left">9</td><td>8</td><td>7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td>0</td></tr></thead><tbody><tr><td colspan="2" class="left right">h</td><td colspan="1" class="left">0</td><td colspan="1" class="">1</td><td colspan="1" class="right">0</td><td colspan="1" class="left right">e</td><td colspan="6" class="left right">ureg16</td></tr></tbody></table>
+16-bit uniform register number from concatenation: e:h:ureg16</p>
+<p>
+<table class="opcodebits"><thead><tr><td>11</td><td>10</td><td class="left">9</td><td>8</td><td>7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td>0</td></tr></thead><tbody><tr><td colspan="2" class="left right">h</td><td colspan="1" class="left">0</td><td colspan="1" class="">1</td><td colspan="1" class="right">1</td><td colspan="1" class="left right">e</td><td colspan="5" class="left right">ureg32</td><td colspan="1" class="left right">?</td></tr></tbody></table>
+32-bit uniform register number from concatenation: e:h:ureg32</p>
+<p>
+<table class="opcodebits"><thead><tr><td>11</td><td>10</td><td class="left">9</td><td>8</td><td>7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td>0</td></tr></thead><tbody><tr><td colspan="2" class="left right">h</td><td colspan="1" class="left">1</td><td colspan="1" class="right">0</td><td colspan="2" class="left right">!= 0</td><td colspan="5" class="left right">reg32</td><td colspan="1" class="left right">?</td></tr></tbody></table>
+32-bit register number from concatenation: h:reg32</p>
+</body></html>
