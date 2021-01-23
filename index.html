@@ -1,7 +1,7 @@
 <html>
 <head><title>Apple M1 GPU ISA</title><style>
 table.opcodebits { border-collapse: collapse; text-align: center; font-family: sans-serif; font-size: small; margin-bottom: 4px; }
-table.opcodebits thead td { font-size: smaller; width: 22px; }
+table.opcodebits thead td { font-size: smaller; width: 18px; }
 table.opcodebits tbody td { border-top: 1px solid #000; border-bottom: 1px solid #000; vertical-align: middle; }
 /* table.opcodebits tbody */ td.left { border-left: 1px solid #000; }
 /* table.opcodebits tbody */ td.right { border-right: 1px solid #000; }
@@ -101,6 +101,35 @@ if n == 1:
   c = -c
 
 d := a * b + (c << shift)
+</pre>
+
+<h2>cmpsel</h2>
+<p><strong>cmpsel</strong> performs a 32-bit or 16-bit compare-select operation. The condition can be "inverted" by swapping the order of the last two operands, allowing comparisons such as "a <= b ? c : d" to be implemented as "a > b ? d : c".</p>
+<p>Short (all fields absent in this encoding are considered to be zero):</p>
+<table class="opcodebits"><thead><tr><td class="left">63</td><td>62</td><td>61</td><td>60</td><td>59</td><td>58</td><td>57</td><td class="right">56</td><td class="left">55</td><td>54</td><td>53</td><td>52</td><td>51</td><td>50</td><td>49</td><td class="right">48</td><td class="left">47</td><td>46</td><td>45</td><td>44</td><td>43</td><td>42</td><td>41</td><td class="right">40</td><td class="left">39</td><td>38</td><td>37</td><td>36</td><td>35</td><td>34</td><td>33</td><td class="right">32</td><td class="left">31</td><td>30</td><td>29</td><td>28</td><td>27</td><td>26</td><td>25</td><td class="right">24</td><td class="left">23</td><td>22</td><td>21</td><td>20</td><td>19</td><td>18</td><td>17</td><td class="right">16</td><td class="left">15</td><td>14</td><td>13</td><td>12</td><td>11</td><td>10</td><td>9</td><td class="right">8</td><td class="left">7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td class="right">0</td></tr></thead><tbody><tr><td colspan="3" class="left right">cc</td><td colspan="9" class="left right">src4</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="9" class="left right">src3</td><td colspan="1" class="left right">?</td><td colspan="11" class="left right">src2</td><td colspan="1" class="left right">?</td><td colspan="11" class="left right">src1</td><td colspan="1" class="left right">0</td><td colspan="7" class="left right">dst</td><td colspan="1" class="left right">?</td><td colspan="1" class="left">0</td><td colspan="1" class="">0</td><td colspan="1" class="">1</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="">1</td><td colspan="1" class="right">0</td></tr></tbody></table>
+<p>Long:</p>
+<table class="opcodebits"><thead><tr><td class="left">79</td><td>78</td><td>77</td><td>76</td><td>75</td><td>74</td><td>73</td><td class="right">72</td><td class="left">71</td><td>70</td><td>69</td><td>68</td><td>67</td><td>66</td><td>65</td><td class="right">64</td><td class="left">63</td><td>62</td><td>61</td><td>60</td><td>59</td><td>58</td><td>57</td><td class="right">56</td><td class="left">55</td><td>54</td><td>53</td><td>52</td><td>51</td><td>50</td><td>49</td><td class="right">48</td><td class="left">47</td><td>46</td><td>45</td><td>44</td><td>43</td><td>42</td><td>41</td><td class="right">40</td><td class="left">39</td><td>38</td><td>37</td><td>36</td><td>35</td><td>34</td><td>33</td><td class="right">32</td><td class="left">31</td><td>30</td><td>29</td><td>28</td><td>27</td><td>26</td><td>25</td><td class="right">24</td><td class="left">23</td><td>22</td><td>21</td><td>20</td><td>19</td><td>18</td><td>17</td><td class="right">16</td><td class="left">15</td><td>14</td><td>13</td><td>12</td><td>11</td><td>10</td><td>9</td><td class="right">8</td><td class="left">7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td class="right">0</td></tr></thead><tbody><tr><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="2" class="left right">dstx</td><td colspan="2" class="left right">src1x</td><td colspan="2" class="left right">src2x</td><td colspan="2" class="left right">src3x</td><td colspan="2" class="left right">src4x</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="3" class="left right">cc</td><td colspan="9" class="left right">src4</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="9" class="left right">src3</td><td colspan="1" class="left right">?</td><td colspan="11" class="left right">src2</td><td colspan="1" class="left right">?</td><td colspan="11" class="left right">src1</td><td colspan="1" class="left right">1</td><td colspan="7" class="left right">dst</td><td colspan="1" class="left right">?</td><td colspan="1" class="left">0</td><td colspan="1" class="">0</td><td colspan="1" class="">1</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="">1</td><td colspan="1" class="right">0</td></tr></tbody></table>
+
+<pre>
+out = bitop_dst(dstx:dst)
+a = bitop_src(src1x:src1)
+b = bitop_src(src2x:src2)
+
+# size based on size of destination register:
+c = cmpsel_src(src3x:dst[0]:src3)
+d = cmpsel_src(src4x:dst[0]:src4)
+
+if   cc == 0b001: r = (a u< b) # UnsignedLessThan
+elif cc == 0b010: r = (a u> b) # UnsignedGreaterThan
+elif cc == 0b100: r = (a == b) # Equal
+elif cc == 0b101: r = (a s< b) # SignedLessThan
+elif cc == 0b110: r = (a s> b) # SignedGreaterThan
+else: TODO
+
+if r:
+	out := c
+else:
+	out := d
 </pre>
 
 <h2>mov (16-bit immediate)</h2>
@@ -219,6 +248,8 @@ Unsigned immediate from concatenation: h:imm</p>
 <p>
 <table class="opcodebits"><thead><tr><td>11</td><td>10</td><td class="left">9</td><td>8</td><td>7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td>0</td></tr></thead><tbody><tr><td colspan="2" class="left right">h</td><td colspan="1" class="left">1</td><td colspan="1" class="right">0</td><td colspan="2" class="left right">!= 0</td><td colspan="5" class="left right">reg32</td><td colspan="1" class="left right">?</td></tr></tbody></table>
 32-bit register number from concatenation: h:reg32</p>
+<h2>cmpsel_src</h2>
+<p>As used by cmpsel for the last two registers. Size is given by the destination size (bit 8 of the whole instruction). TODO: Diagram: three bit type 0b001 = register (as do 0b010 and 0b011 with modifier), 0b100 = immediate, 0b11x = uniform register (x is high (pos 128) bit)</p>
 <h1>Special Registers</h1>
 
 <p>TODO: It's unclear if these have special meaning to the hardware, or are configured by the driver, but I'm guessing the former, as the register numbers are constant, unlike the uniform registers.</p>
