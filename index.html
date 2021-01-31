@@ -142,10 +142,37 @@ else:
 001001 = abs(reg)
 010001 = -reg
 011001 = -abs(reg)</pre>
-<h2>store</h2>
-<table class="opcodebits"><thead><tr><td class="left">63</td><td>62</td><td>61</td><td>60</td><td>59</td><td>58</td><td>57</td><td class="right">56</td><td class="left">55</td><td>54</td><td>53</td><td>52</td><td>51</td><td>50</td><td>49</td><td class="right">48</td><td class="left">47</td><td>46</td><td>45</td><td>44</td><td>43</td><td>42</td><td>41</td><td class="right">40</td><td class="left">39</td><td>38</td><td>37</td><td>36</td><td>35</td><td>34</td><td>33</td><td class="right">32</td><td class="left">31</td><td>30</td><td>29</td><td>28</td><td>27</td><td>26</td><td>25</td><td class="right">24</td><td class="left">23</td><td>22</td><td>21</td><td>20</td><td>19</td><td>18</td><td>17</td><td class="right">16</td><td class="left">15</td><td>14</td><td>13</td><td>12</td><td>11</td><td>10</td><td>9</td><td class="right">8</td><td class="left">7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td class="right">0</td></tr></thead><tbody><tr><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="2" class="left right">srcx</td><td colspan="4" class="left right">addrh</td><td colspan="4" class="left right">idxh</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">ua</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">ic</td><td colspan="3" class="left right">idxl</td><td colspan="1" class="left right">?</td><td colspan="3" class="left right">addrl</td><td colspan="1" class="left right">?</td><td colspan="6" class="left right">src</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left">1</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="">1</td><td colspan="1" class="">0</td><td colspan="1" class="right">1</td></tr></tbody></table>
-<p>ua = if 1, then 64-bit addr comes from two consecutive uniform registers, rather than two consecutive general purpose registers (encoded value in addrh:addrl is the first register)</p>
-<p>ic = if 1, then index (idxh:idxl) is an immediate, rather than a 32-bit general purpose register</p>
+<h2>load/store</h2>
+<table class="opcodebits"><thead><tr><td class="left">63</td><td>62</td><td>61</td><td>60</td><td>59</td><td>58</td><td>57</td><td class="right">56</td><td class="left">55</td><td>54</td><td>53</td><td>52</td><td>51</td><td>50</td><td>49</td><td class="right">48</td><td class="left">47</td><td>46</td><td>45</td><td>44</td><td>43</td><td>42</td><td>41</td><td class="right">40</td><td class="left">39</td><td>38</td><td>37</td><td>36</td><td>35</td><td>34</td><td>33</td><td class="right">32</td><td class="left">31</td><td>30</td><td>29</td><td>28</td><td>27</td><td>26</td><td>25</td><td class="right">24</td><td class="left">23</td><td>22</td><td>21</td><td>20</td><td>19</td><td>18</td><td>17</td><td class="right">16</td><td class="left">15</td><td>14</td><td>13</td><td>12</td><td>11</td><td>10</td><td>9</td><td class="right">8</td><td class="left">7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td class="right">0</td></tr></thead><tbody><tr><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="4" class="left right">mask</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">ss</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="2" class="left right">shift</td><td colspan="2" class="left right">srcx</td><td colspan="4" class="left right">addrh</td><td colspan="4" class="left right">idxh</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">ua</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">ic</td><td colspan="3" class="left right">idxl</td><td colspan="1" class="left right">?</td><td colspan="3" class="left right">addrl</td><td colspan="1" class="left right">?</td><td colspan="6" class="left right">src</td><td colspan="1" class="left right">?</td><td colspan="2" class="left right">size</td><td colspan="1" class="left right">st</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="">1</td><td colspan="1" class="">0</td><td colspan="1" class="right">1</td></tr></tbody></table>
+<p>st = if 1, store</p>
+<p>size: element size in memory: </p><pre>
+00 = 1 byte
+01 = 2 bytes
+10 = 4 bytes</pre>
+<pre>
+if ua:
+	addr := ureg32[addrh:addrl + 1] : ureg32[addrh:addrl]
+else:
+	addr := reg32[addrh:addrl + 1] : reg32[addrh:addrl]
+if ic:
+	idx := idxh:idxl &lt;&lt; shift
+else:
+	idx := reg32[idxh:idxl] &lt;&lt; shift
+
+for i := 0 to 3:
+	if mask[i]:
+		a := addr + size * (idx + i)
+       		if st:
+			if ss:
+				mem{size}[a] := reg32[srcx:src + i]
+			else:
+				mem{size}[a] := reg16[srcx:src + i]
+		else:
+			if ss:
+				reg32[srcx:src + i] := mem{size}[a]
+			else:
+				reg16[srcx:src + i] := mem{size}[a]
+</pre>
 <p>TODO: other bits. This instruction can represent an 8-bit, 16-bit, or 32-bit store, it can also store groups of two, three or four 32-bit values, or 16-bit values (or probably 8-bit values too, it can definitely store a group of three 8-bit values from three 16-bit registers). The index scale may vary somewhat independent of the store-size, e.g. index times four or sixteen bytes can be used with a 16-byte store, but index time sixteen bytes can probably not be used with a 4-byte store. There are probably other unknown bits related to the nature of the memory access.</p>
 <h2>mov (16-bit immediate)</h2>
 <p><strong>mov (16-bit immediate)</strong> sets a 16-bit register to an immediate value. Only r0l-r31h may be used in the short variant.</p>
