@@ -43,7 +43,7 @@ Instructions with 64-bit, 96-bit, or 128-bit register operands use consecutive 3
 
 <h1>Instructions</h1>
 <p>Instructions are variable length, multiples of 2 bytes, up to ~10 bytes. They are written as little-endian, so bit 7 denotes the 0x80 bit of the first byte, and bit 8 denotes the 1 bit of the second byte. The right-to-left encoding seemed good at the time. It's nice that binary sequences can be read in the usual numeric way. I'm not sure.</p>
-<p>The colon is used as a bitwise concatenation operation, so if 'b' is a two bit fields 'a:b' is equivalent to '(a << 2) | b'. However, ':=' is used to indicate a store to a register.</p>
+<p>The colon is used as a bitwise concatenation operation, so if 'b' is a two bit fields 'a:b' is equivalent to '(a &lt;&lt; 2) | b'. However, ':=' is used to indicate a store to a register.</p>
 <p>The flag in bit 7 is assumed to mean the same thing in most instructions - it's typically set if the following instruction depends on the result of the current instruction. It's not yet clear if this is its true meaning, nor if this is important to performance or correctness.</p>
 <h2>bitop</h2>
 <p><strong>bitop</strong> performs an arbitrary 32-bit or 16-bit bitwise operation on one or two inputs, using a truth table encoded in the instruction. This is used to implement common operations like "and" and "not", as well as to move values from uniform registers to SIMD registers, or between SIMD registers.</p>
@@ -80,7 +80,7 @@ d = add_dst(dstx:dst)
 if n == 1:
   c = -c
 
-d := a + (c << shift)
+d := a + (c &lt;&lt; shift)
 </pre>
 
 <h2>madd</h2>
@@ -101,15 +101,15 @@ d = add_dst(dstx:dst)
 if n == 1:
   c = -c
 
-d := a * b + (c << shift)
+d := a * b + (c &lt;&lt; shift)
 </pre>
 
 <h2>cmpsel</h2>
-<p><strong>cmpsel</strong> performs a 32-bit or 16-bit compare-select operation. The condition can be "inverted" by swapping the order of the last two operands, allowing comparisons such as "a <= b ? c : d" to be implemented as "a > b ? d : c".</p>
+<p><strong>cmpsel</strong> performs a 32-bit or 16-bit compare and select operation. The condition can be "inverted" by swapping the order of the last two operands, allowing comparisons such as "a <= b ? c : d" to be implemented as "a > b ? d : c".</p>
 <p>Short (all fields absent in this encoding are considered to be zero):</p>
-<table class="opcodebits"><thead><tr><td class="left">63</td><td>62</td><td>61</td><td>60</td><td>59</td><td>58</td><td>57</td><td class="right">56</td><td class="left">55</td><td>54</td><td>53</td><td>52</td><td>51</td><td>50</td><td>49</td><td class="right">48</td><td class="left">47</td><td>46</td><td>45</td><td>44</td><td>43</td><td>42</td><td>41</td><td class="right">40</td><td class="left">39</td><td>38</td><td>37</td><td>36</td><td>35</td><td>34</td><td>33</td><td class="right">32</td><td class="left">31</td><td>30</td><td>29</td><td>28</td><td>27</td><td>26</td><td>25</td><td class="right">24</td><td class="left">23</td><td>22</td><td>21</td><td>20</td><td>19</td><td>18</td><td>17</td><td class="right">16</td><td class="left">15</td><td>14</td><td>13</td><td>12</td><td>11</td><td>10</td><td>9</td><td class="right">8</td><td class="left">7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td class="right">0</td></tr></thead><tbody><tr><td colspan="3" class="left right">cc</td><td colspan="9" class="left right">src4</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="9" class="left right">src3</td><td colspan="1" class="left right">?</td><td colspan="11" class="left right">src2</td><td colspan="1" class="left right">?</td><td colspan="11" class="left right">src1</td><td colspan="1" class="left right">0</td><td colspan="7" class="left right">dst</td><td colspan="1" class="left right">?</td><td colspan="1" class="left">0</td><td colspan="1" class="">0</td><td colspan="1" class="">1</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="">1</td><td colspan="1" class="right">0</td></tr></tbody></table>
+<table class="opcodebits"><thead><tr><td class="left">63</td><td>62</td><td>61</td><td>60</td><td>59</td><td>58</td><td>57</td><td class="right">56</td><td class="left">55</td><td>54</td><td>53</td><td>52</td><td>51</td><td>50</td><td>49</td><td class="right">48</td><td class="left">47</td><td>46</td><td>45</td><td>44</td><td>43</td><td>42</td><td>41</td><td class="right">40</td><td class="left">39</td><td>38</td><td>37</td><td>36</td><td>35</td><td>34</td><td>33</td><td class="right">32</td><td class="left">31</td><td>30</td><td>29</td><td>28</td><td>27</td><td>26</td><td>25</td><td class="right">24</td><td class="left">23</td><td>22</td><td>21</td><td>20</td><td>19</td><td>18</td><td>17</td><td class="right">16</td><td class="left">15</td><td>14</td><td>13</td><td>12</td><td>11</td><td>10</td><td>9</td><td class="right">8</td><td class="left">7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td class="right">0</td></tr></thead><tbody><tr><td colspan="3" class="left right">cc</td><td colspan="9" class="left right">src4</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="9" class="left right">src3</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="10" class="left right">src2</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="10" class="left right">src1</td><td colspan="1" class="left right">0</td><td colspan="7" class="left right">dst</td><td colspan="1" class="left right">?</td><td colspan="1" class="left">0</td><td colspan="1" class="">0</td><td colspan="1" class="">1</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="">1</td><td colspan="1" class="right">0</td></tr></tbody></table>
 <p>Long:</p>
-<table class="opcodebits"><thead><tr><td class="left">79</td><td>78</td><td>77</td><td>76</td><td>75</td><td>74</td><td>73</td><td class="right">72</td><td class="left">71</td><td>70</td><td>69</td><td>68</td><td>67</td><td>66</td><td>65</td><td class="right">64</td><td class="left">63</td><td>62</td><td>61</td><td>60</td><td>59</td><td>58</td><td>57</td><td class="right">56</td><td class="left">55</td><td>54</td><td>53</td><td>52</td><td>51</td><td>50</td><td>49</td><td class="right">48</td><td class="left">47</td><td>46</td><td>45</td><td>44</td><td>43</td><td>42</td><td>41</td><td class="right">40</td><td class="left">39</td><td>38</td><td>37</td><td>36</td><td>35</td><td>34</td><td>33</td><td class="right">32</td><td class="left">31</td><td>30</td><td>29</td><td>28</td><td>27</td><td>26</td><td>25</td><td class="right">24</td><td class="left">23</td><td>22</td><td>21</td><td>20</td><td>19</td><td>18</td><td>17</td><td class="right">16</td><td class="left">15</td><td>14</td><td>13</td><td>12</td><td>11</td><td>10</td><td>9</td><td class="right">8</td><td class="left">7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td class="right">0</td></tr></thead><tbody><tr><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="2" class="left right">dstx</td><td colspan="2" class="left right">src1x</td><td colspan="2" class="left right">src2x</td><td colspan="2" class="left right">src3x</td><td colspan="2" class="left right">src4x</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="3" class="left right">cc</td><td colspan="9" class="left right">src4</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="9" class="left right">src3</td><td colspan="1" class="left right">?</td><td colspan="11" class="left right">src2</td><td colspan="1" class="left right">?</td><td colspan="11" class="left right">src1</td><td colspan="1" class="left right">1</td><td colspan="7" class="left right">dst</td><td colspan="1" class="left right">?</td><td colspan="1" class="left">0</td><td colspan="1" class="">0</td><td colspan="1" class="">1</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="">1</td><td colspan="1" class="right">0</td></tr></tbody></table>
+<table class="opcodebits"><thead><tr><td class="left">79</td><td>78</td><td>77</td><td>76</td><td>75</td><td>74</td><td>73</td><td class="right">72</td><td class="left">71</td><td>70</td><td>69</td><td>68</td><td>67</td><td>66</td><td>65</td><td class="right">64</td><td class="left">63</td><td>62</td><td>61</td><td>60</td><td>59</td><td>58</td><td>57</td><td class="right">56</td><td class="left">55</td><td>54</td><td>53</td><td>52</td><td>51</td><td>50</td><td>49</td><td class="right">48</td><td class="left">47</td><td>46</td><td>45</td><td>44</td><td>43</td><td>42</td><td>41</td><td class="right">40</td><td class="left">39</td><td>38</td><td>37</td><td>36</td><td>35</td><td>34</td><td>33</td><td class="right">32</td><td class="left">31</td><td>30</td><td>29</td><td>28</td><td>27</td><td>26</td><td>25</td><td class="right">24</td><td class="left">23</td><td>22</td><td>21</td><td>20</td><td>19</td><td>18</td><td>17</td><td class="right">16</td><td class="left">15</td><td>14</td><td>13</td><td>12</td><td>11</td><td>10</td><td>9</td><td class="right">8</td><td class="left">7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td class="right">0</td></tr></thead><tbody><tr><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="2" class="left right">dstx</td><td colspan="2" class="left right">src1x</td><td colspan="2" class="left right">src2x</td><td colspan="2" class="left right">src3x</td><td colspan="2" class="left right">src4x</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="3" class="left right">cc</td><td colspan="9" class="left right">src4</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="9" class="left right">src3</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="10" class="left right">src2</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="10" class="left right">src1</td><td colspan="1" class="left right">1</td><td colspan="7" class="left right">dst</td><td colspan="1" class="left right">?</td><td colspan="1" class="left">0</td><td colspan="1" class="">0</td><td colspan="1" class="">1</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="">1</td><td colspan="1" class="right">0</td></tr></tbody></table>
 
 <pre>
 out = bitop_dst(dstx:dst)
@@ -133,17 +133,82 @@ else:
 	out := d
 </pre>
 
+<h2>fcmpsel</h2>
+<p><strong>fcmpsel</strong> performs a 32-bit or 16-bit float-compare and select operation. The condition can be "inverted" by swapping the order of the last two operands.</p>
+<p>Short (all fields absent in this encoding are considered to be zero):</p>
+<table class="opcodebits"><thead><tr><td class="left">63</td><td>62</td><td>61</td><td>60</td><td>59</td><td>58</td><td>57</td><td class="right">56</td><td class="left">55</td><td>54</td><td>53</td><td>52</td><td>51</td><td>50</td><td>49</td><td class="right">48</td><td class="left">47</td><td>46</td><td>45</td><td>44</td><td>43</td><td>42</td><td>41</td><td class="right">40</td><td class="left">39</td><td>38</td><td>37</td><td>36</td><td>35</td><td>34</td><td>33</td><td class="right">32</td><td class="left">31</td><td>30</td><td>29</td><td>28</td><td>27</td><td>26</td><td>25</td><td class="right">24</td><td class="left">23</td><td>22</td><td>21</td><td>20</td><td>19</td><td>18</td><td>17</td><td class="right">16</td><td class="left">15</td><td>14</td><td>13</td><td>12</td><td>11</td><td>10</td><td>9</td><td class="right">8</td><td class="left">7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td class="right">0</td></tr></thead><tbody><tr><td colspan="3" class="left right">cc</td><td colspan="9" class="left right">src4</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="9" class="left right">src3</td><td colspan="2" class="left right">mod2</td><td colspan="10" class="left right">src2</td><td colspan="2" class="left right">mod1</td><td colspan="10" class="left right">src1</td><td colspan="1" class="left right">0</td><td colspan="7" class="left right">dst</td><td colspan="1" class="left right">?</td><td colspan="1" class="left">0</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="">1</td><td colspan="1" class="right">0</td></tr></tbody></table>
+<p>Long:</p>
+<table class="opcodebits"><thead><tr><td class="left">79</td><td>78</td><td>77</td><td>76</td><td>75</td><td>74</td><td>73</td><td class="right">72</td><td class="left">71</td><td>70</td><td>69</td><td>68</td><td>67</td><td>66</td><td>65</td><td class="right">64</td><td class="left">63</td><td>62</td><td>61</td><td>60</td><td>59</td><td>58</td><td>57</td><td class="right">56</td><td class="left">55</td><td>54</td><td>53</td><td>52</td><td>51</td><td>50</td><td>49</td><td class="right">48</td><td class="left">47</td><td>46</td><td>45</td><td>44</td><td>43</td><td>42</td><td>41</td><td class="right">40</td><td class="left">39</td><td>38</td><td>37</td><td>36</td><td>35</td><td>34</td><td>33</td><td class="right">32</td><td class="left">31</td><td>30</td><td>29</td><td>28</td><td>27</td><td>26</td><td>25</td><td class="right">24</td><td class="left">23</td><td>22</td><td>21</td><td>20</td><td>19</td><td>18</td><td>17</td><td class="right">16</td><td class="left">15</td><td>14</td><td>13</td><td>12</td><td>11</td><td>10</td><td>9</td><td class="right">8</td><td class="left">7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td class="right">0</td></tr></thead><tbody><tr><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="2" class="left right">dstx</td><td colspan="2" class="left right">src1x</td><td colspan="2" class="left right">src2x</td><td colspan="2" class="left right">src3x</td><td colspan="2" class="left right">src4x</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="3" class="left right">cc</td><td colspan="9" class="left right">src4</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="9" class="left right">src3</td><td colspan="2" class="left right">mod2</td><td colspan="10" class="left right">src2</td><td colspan="2" class="left right">mod1</td><td colspan="10" class="left right">src1</td><td colspan="1" class="left right">1</td><td colspan="7" class="left right">dst</td><td colspan="1" class="left right">?</td><td colspan="1" class="left">0</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="">1</td><td colspan="1" class="right">0</td></tr></tbody></table>
+
+<pre>
+out = bitop_dst(dstx:dst)
+a = bitop_src(src1x:src1) with float_modifier(mod1)
+b = bitop_src(src2x:src2) with float_modifier(mod2)
+
+# size based on size of destination register:
+c = cmpsel_src(src3x:dst[0]:src3)
+d = cmpsel_src(src4x:dst[0]:src4)
+
+if   cc == 0b000: r = (a == b) # FloatEqual
+elif cc == 0b001: r = (a <  b) # FloatLessThan
+elif cc == 0b010: r = (a >  b) # FloatGreaterThan
+elif cc == 0b101: r = (a >= b) # FloatGreaterThanOrEqual
+elif cc == 0b110: r = (a <= b) # FloatLessThanOrEqual
+else: TODO
+
+if r:
+	out := c
+else:
+	out := d
+</pre>
+
 <h2>fadd.16</h2>
-<table class="opcodebits"><thead><tr><td class="left">47</td><td>46</td><td>45</td><td>44</td><td>43</td><td>42</td><td>41</td><td class="right">40</td><td class="left">39</td><td>38</td><td>37</td><td>36</td><td>35</td><td>34</td><td>33</td><td class="right">32</td><td class="left">31</td><td>30</td><td>29</td><td>28</td><td>27</td><td>26</td><td>25</td><td class="right">24</td><td class="left">23</td><td>22</td><td>21</td><td>20</td><td>19</td><td>18</td><td>17</td><td class="right">16</td><td class="left">15</td><td>14</td><td>13</td><td>12</td><td>11</td><td>10</td><td>9</td><td class="right">8</td><td class="left">7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td class="right">0</td></tr></thead><tbody><tr><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="2" class="left right">dstx</td><td colspan="2" class="left right">src1x</td><td colspan="2" class="left right">src2x</td><td colspan="6" class="left right">type2</td><td colspan="6" class="left right">src2</td><td colspan="6" class="left right">type1</td><td colspan="6" class="left right">src1</td><td colspan="1" class="left right">1</td><td colspan="6" class="left right">dst</td><td colspan="1" class="left right">0</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">sat</td><td colspan="1" class="left">1</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="">1</td><td colspan="1" class="">1</td><td colspan="1" class="right">0</td></tr></tbody></table>
-<p>Type encoding (TODO):</p><pre>
-000000 = immediate (see float_imm)
-000001 = reg
-00010e = ureg (e=high bit)
-001001 = abs(reg)
-010001 = -reg
-011001 = -abs(reg)</pre>
+<table class="opcodebits"><thead><tr><td class="left">47</td><td>46</td><td>45</td><td>44</td><td>43</td><td>42</td><td>41</td><td class="right">40</td><td class="left">39</td><td>38</td><td>37</td><td>36</td><td>35</td><td>34</td><td>33</td><td class="right">32</td><td class="left">31</td><td>30</td><td>29</td><td>28</td><td>27</td><td>26</td><td>25</td><td class="right">24</td><td class="left">23</td><td>22</td><td>21</td><td>20</td><td>19</td><td>18</td><td>17</td><td class="right">16</td><td class="left">15</td><td>14</td><td>13</td><td>12</td><td>11</td><td>10</td><td>9</td><td class="right">8</td><td class="left">7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td class="right">0</td></tr></thead><tbody><tr><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="2" class="left right">dstx</td><td colspan="2" class="left right">src1x</td><td colspan="2" class="left right">src2x</td><td colspan="1" class="left right">?</td><td colspan="2" class="left right">mod2</td><td colspan="3" class="left right">type2</td><td colspan="6" class="left right">src2</td><td colspan="1" class="left right">?</td><td colspan="2" class="left right">mod1</td><td colspan="3" class="left right">type1</td><td colspan="6" class="left right">src1</td><td colspan="1" class="left right">1</td><td colspan="6" class="left right">dst</td><td colspan="1" class="left right">0</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">sat</td><td colspan="1" class="left">1</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="">1</td><td colspan="1" class="">1</td><td colspan="1" class="right">0</td></tr></tbody></table>
+<p>mod:type encoding:</p><pre>
+
+00000 = immediate (see float_imm)
+00001 = reg
+0010e = ureg (e=high bit)
+01001 = abs(reg)
+10001 = -reg
+11001 = -abs(reg)</pre>
+
+<h2>unary float op</h2>
+<p>Short (all fields absent in this encoding are considered to be zero):</p>
+<table class="opcodebits"><thead><tr><td class="left">31</td><td>30</td><td>29</td><td>28</td><td>27</td><td>26</td><td>25</td><td class="right">24</td><td class="left">23</td><td>22</td><td>21</td><td>20</td><td>19</td><td>18</td><td>17</td><td class="right">16</td><td class="left">15</td><td>14</td><td>13</td><td>12</td><td>11</td><td>10</td><td>9</td><td class="right">8</td><td class="left">7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td class="right">0</td></tr></thead><tbody><tr><td colspan="4" class="left right">op</td><td colspan="2" class="left right">mod1</td><td colspan="4" class="left right">type1</td><td colspan="6" class="left right">src1</td><td colspan="1" class="left right">0</td><td colspan="7" class="left right">dst</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">sat</td><td colspan="1" class="left">0</td><td colspan="1" class="">0</td><td colspan="1" class="">1</td><td colspan="1" class="">0</td><td colspan="1" class="">1</td><td colspan="1" class="right">0</td></tr></tbody></table>
+<p>Long:</p>
+<table class="opcodebits"><thead><tr><td class="left">47</td><td>46</td><td>45</td><td>44</td><td>43</td><td>42</td><td>41</td><td class="right">40</td><td class="left">39</td><td>38</td><td>37</td><td>36</td><td>35</td><td>34</td><td>33</td><td class="right">32</td><td class="left">31</td><td>30</td><td>29</td><td>28</td><td>27</td><td>26</td><td>25</td><td class="right">24</td><td class="left">23</td><td>22</td><td>21</td><td>20</td><td>19</td><td>18</td><td>17</td><td class="right">16</td><td class="left">15</td><td>14</td><td>13</td><td>12</td><td>11</td><td>10</td><td>9</td><td class="right">8</td><td class="left">7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td class="right">0</td></tr></thead><tbody><tr><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="2" class="left right">dstx</td><td colspan="2" class="left right">src1x</td><td colspan="1" class="left">0</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="right">0</td><td colspan="6" class="left right">op</td><td colspan="2" class="left right">mod1</td><td colspan="4" class="left right">type1</td><td colspan="6" class="left right">src1</td><td colspan="1" class="left right">1</td><td colspan="7" class="left right">dst</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">sat</td><td colspan="1" class="left">0</td><td colspan="1" class="">0</td><td colspan="1" class="">1</td><td colspan="1" class="">0</td><td colspan="1" class="">1</td><td colspan="1" class="right">0</td></tr></tbody></table>
+
+<p>
+16-bit registers correspond to a float16 ("half") source/destination.<br>
+32-bit registers correspond to a float32 ("float") source/destination.</p>
+<pre>
+out := bitop_dst(dstx:dst)
+a := bitop_src(src1x:type1:src1) as float
+
+# mod1 is float_modifier
+if mod1[1]: a := abs(a)
+if mod1[0]: a := -a
+ 
+if   op == 0b000000: r := floor(a)
+elif op == 0b001000: r := reciprocal(a)
+elif op == 0b001001: r := reciprocal_square_root(a)
+elif op == 0b001100: r := log2(a)
+elif op == 0b001101: r := exp2(a)
+elif op == 0b010000: r := ceil(a)
+elif op == 0b100000: r := trunc(a)
+elif op == 0b110000: r := rint(a)
+
+if sat: r := saturate(r)
+
+if out is reg16: r := to_half(r)
+
+out := r
+</pre>
+
 <h2>load/store</h2>
-<table class="opcodebits"><thead><tr><td class="left">63</td><td>62</td><td>61</td><td>60</td><td>59</td><td>58</td><td>57</td><td class="right">56</td><td class="left">55</td><td>54</td><td>53</td><td>52</td><td>51</td><td>50</td><td>49</td><td class="right">48</td><td class="left">47</td><td>46</td><td>45</td><td>44</td><td>43</td><td>42</td><td>41</td><td class="right">40</td><td class="left">39</td><td>38</td><td>37</td><td>36</td><td>35</td><td>34</td><td>33</td><td class="right">32</td><td class="left">31</td><td>30</td><td>29</td><td>28</td><td>27</td><td>26</td><td>25</td><td class="right">24</td><td class="left">23</td><td>22</td><td>21</td><td>20</td><td>19</td><td>18</td><td>17</td><td class="right">16</td><td class="left">15</td><td>14</td><td>13</td><td>12</td><td>11</td><td>10</td><td>9</td><td class="right">8</td><td class="left">7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td class="right">0</td></tr></thead><tbody><tr><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="4" class="left right">mask</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">ss</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="2" class="left right">shift</td><td colspan="2" class="left right">srcx</td><td colspan="4" class="left right">addrh</td><td colspan="4" class="left right">idxh</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">ua</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">ic</td><td colspan="3" class="left right">idxl</td><td colspan="1" class="left right">?</td><td colspan="3" class="left right">addrl</td><td colspan="1" class="left right">?</td><td colspan="6" class="left right">src</td><td colspan="1" class="left right">?</td><td colspan="2" class="left right">size</td><td colspan="1" class="left right">st</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="">1</td><td colspan="1" class="">0</td><td colspan="1" class="right">1</td></tr></tbody></table>
+<p>This instruction can represent an 8-bit, 16-bit, or 32-bit load or store, it can also operate on groups of two, three or four 32-bit values. There are probably other unknown bits related to the nature of the memory access and/or different encodings.</p>
+<table class="opcodebits"><thead><tr><td class="left">63</td><td>62</td><td>61</td><td>60</td><td>59</td><td>58</td><td>57</td><td class="right">56</td><td class="left">55</td><td>54</td><td>53</td><td>52</td><td>51</td><td>50</td><td>49</td><td class="right">48</td><td class="left">47</td><td>46</td><td>45</td><td>44</td><td>43</td><td>42</td><td>41</td><td class="right">40</td><td class="left">39</td><td>38</td><td>37</td><td>36</td><td>35</td><td>34</td><td>33</td><td class="right">32</td><td class="left">31</td><td>30</td><td>29</td><td>28</td><td>27</td><td>26</td><td>25</td><td class="right">24</td><td class="left">23</td><td>22</td><td>21</td><td>20</td><td>19</td><td>18</td><td>17</td><td class="right">16</td><td class="left">15</td><td>14</td><td>13</td><td>12</td><td>11</td><td>10</td><td>9</td><td class="right">8</td><td class="left">7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td class="right">0</td></tr></thead><tbody><tr><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="4" class="left right">mask</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">ss</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="2" class="left right">shift</td><td colspan="2" class="left right">srcx</td><td colspan="4" class="left right">addrh</td><td colspan="4" class="left right">idxh</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left">0</td><td colspan="1" class="right">0</td><td colspan="1" class="left right">ua</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">ic</td><td colspan="4" class="left right">idxl</td><td colspan="3" class="left right">addrl</td><td colspan="1" class="left right">?</td><td colspan="6" class="left right">src</td><td colspan="1" class="left right">?</td><td colspan="2" class="left right">size</td><td colspan="1" class="left right">st</td><td colspan="1" class="left">0</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="">1</td><td colspan="1" class="">0</td><td colspan="1" class="right">1</td></tr></tbody></table>
 <p>st = if 1, store</p>
 <p>size: element size in memory: </p><pre>
 00 = 1 byte
@@ -157,23 +222,22 @@ else:
 if ic:
 	idx := idxh:idxl &lt;&lt; shift
 else:
-	idx := reg32[idxh:idxl] &lt;&lt; shift
+	idx := reg32[idxh:idxl >> 1] &lt;&lt; shift
 
 for i := 0 to 3:
 	if mask[i]:
 		a := addr + size * (idx + i)
-       		if st:
+		if st:
 			if ss:
-				mem{size}[a] := reg32[srcx:src + i]
+				mem{size}[a] := reg32[(srcx:src >> 1) + i]
 			else:
 				mem{size}[a] := reg16[srcx:src + i]
 		else:
 			if ss:
-				reg32[srcx:src + i] := mem{size}[a]
+				reg32[(srcx:src >> 1) + i] := mem{size}[a]
 			else:
 				reg16[srcx:src + i] := mem{size}[a]
 </pre>
-<p>TODO: other bits. This instruction can represent an 8-bit, 16-bit, or 32-bit store, it can also store groups of two, three or four 32-bit values, or 16-bit values (or probably 8-bit values too, it can definitely store a group of three 8-bit values from three 16-bit registers). The index scale may vary somewhat independent of the store-size, e.g. index times four or sixteen bytes can be used with a 16-byte store, but index time sixteen bytes can probably not be used with a 4-byte store. There are probably other unknown bits related to the nature of the memory access.</p>
 <h2>mov (16-bit immediate)</h2>
 <p><strong>mov (16-bit immediate)</strong> sets a 16-bit register to an immediate value. Only r0l-r31h may be used in the short variant.</p>
 <table class="opcodebits"><thead><tr><td class="left">31</td><td>30</td><td>29</td><td>28</td><td>27</td><td>26</td><td>25</td><td class="right">24</td><td class="left">23</td><td>22</td><td>21</td><td>20</td><td>19</td><td>18</td><td>17</td><td class="right">16</td><td class="left">15</td><td>14</td><td>13</td><td>12</td><td>11</td><td>10</td><td>9</td><td class="right">8</td><td class="left">7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td class="right">0</td></tr></thead><tbody><tr><td colspan="16" class="left right">imm16</td><td colspan="1" class="left right">0</td><td colspan="6" class="left right">r</td><td colspan="1" class="left right">0</td><td colspan="1" class="left right">?</td><td colspan="1" class="left">1</td><td colspan="1" class="">1</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="">1</td><td colspan="1" class="right">0</td></tr></tbody></table>
@@ -203,7 +267,7 @@ reg32[h:r] := imm32
 </pre>
 
 <h2>mov (from SR)</h2>
-<table class="opcodebits"><thead><tr><td class="left">31</td><td>30</td><td>29</td><td>28</td><td>27</td><td>26</td><td>25</td><td class="right">24</td><td class="left">23</td><td>22</td><td>21</td><td>20</td><td>19</td><td>18</td><td>17</td><td class="right">16</td><td class="left">15</td><td>14</td><td>13</td><td>12</td><td>11</td><td>10</td><td>9</td><td class="right">8</td><td class="left">7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td class="right">0</td></tr></thead><tbody><tr><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="2" class="left right">dstx</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="2" class="left right">srx</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="6" class="left right">sr</td><td colspan="1" class="left right">0</td><td colspan="7" class="left right">dst</td><td colspan="1" class="left right">?</td><td colspan="1" class="left">1</td><td colspan="1" class="">1</td><td colspan="1" class="">1</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="">1</td><td colspan="1" class="right">0</td></tr></tbody></table>
+<table class="opcodebits"><thead><tr><td class="left">31</td><td>30</td><td>29</td><td>28</td><td>27</td><td>26</td><td>25</td><td class="right">24</td><td class="left">23</td><td>22</td><td>21</td><td>20</td><td>19</td><td>18</td><td>17</td><td class="right">16</td><td class="left">15</td><td>14</td><td>13</td><td>12</td><td>11</td><td>10</td><td>9</td><td class="right">8</td><td class="left">7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td class="right">0</td></tr></thead><tbody><tr><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="2" class="left right">dstx</td><td colspan="2" class="left right">srx</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="6" class="left right">sr</td><td colspan="1" class="left right">0</td><td colspan="7" class="left right">dst</td><td colspan="1" class="left right">?</td><td colspan="1" class="left">1</td><td colspan="1" class="">1</td><td colspan="1" class="">1</td><td colspan="1" class="">0</td><td colspan="1" class="">0</td><td colspan="1" class="">1</td><td colspan="1" class="right">0</td></tr></tbody></table>
 
 <pre>
 d = bitop_dst(dstx:dst)
@@ -273,6 +337,9 @@ Unsigned immediate from concatenation: h:imm</p>
 <p>
 <table class="opcodebits"><thead><tr><td>12</td><td>11</td><td class="left">10</td><td>9</td><td>8</td><td>7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td>0</td></tr></thead><tbody><tr><td colspan="2" class="left right">h</td><td colspan="1" class="left right">sx</td><td colspan="1" class="left">1</td><td colspan="1" class="right">0</td><td colspan="2" class="left right">!= 0</td><td colspan="5" class="left right">reg32</td><td colspan="1" class="left right">?</td></tr></tbody></table>
 32-bit register number from concatenation: h:reg32</p>
+<p>
+<table class="opcodebits"><thead><tr><td>12</td><td>11</td><td class="left">10</td><td>9</td><td>8</td><td>7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td>0</td></tr></thead><tbody><tr><td colspan="2" class="left right">h</td><td colspan="1" class="left right">sx</td><td colspan="1" class="left">1</td><td colspan="1" class="right">1</td><td colspan="2" class="left right">!= 0</td><td colspan="5" class="left right">reg64</td><td colspan="1" class="left right">?</td></tr></tbody></table>
+64-bit register number from concatenation: reg32[h:reg64 + 1]:reg32[h:reg64]</p>
 <h2>bitop_src</h2>
 <p>As used by bitop. The "!= 0" field should be encoded as 0b01. Registers are zero-extended.</p>
 <p>
@@ -293,7 +360,17 @@ Unsigned immediate from concatenation: h:imm</p>
 <h2>cmpsel_src</h2>
 <p>As used by cmpsel for the last two registers. Size is given by the destination size (bit 8 of the whole instruction). TODO: Diagram: three bit type 0b001 = register (as do 0b010 and 0b011 with modifier), 0b100 = immediate, 0b11x = uniform register (x is high (pos 128) bit)</p>
 <h2>float_imm</h2>
-<p>8-bit foating-point immediates use a custom floating point format, with a sign bit, a 3-bit exponent (bias=3), and a 4 bit fraction. There is no NaN/Infinity (exponent=7 is treated like any other), but there are sub-normals (when exponent=0), such that 0b00000001 = 0.015625 and 0b00000000 = 0.
+<p>8-bit foating-point immediates use a custom floating point format, with a sign bit, a 3-bit exponent (bias=3), and a 4 bit fraction:</p>
+<table class="opcodebits"><thead><tr><td>7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td>0</td></tr></thead><tbody><tr><td colspan="1" class="left right">s</td><td colspan="3" class="left right">exp</td><td colspan="4" class="left right">fraction</td></tr></tbody></table>
+There is no NaN/Infinity (exponent=7 is treated like any other), but there are sub-normals (when exponent=0), such that 0b00000001 = 0.015625 and 0b00000000 = 0.
+<h2>float_modifier</h2>
+<p>Standard floating-point modifiers.</p>
+<table class="opcodebits"><thead><tr><td>1</td><td>0</td></tr></thead><tbody><tr><td colspan="1" class="left right">neg</td><td colspan="1" class="left right">abs</td></tr></tbody></table>
+<pre>
+if abs: x := abs(x)
+if neg: x := -x
+</pre>
+(if both are set, -abs(x))
 <h1>Special Registers</h1>
 
 <p>TODO: It's unclear if these have special meaning to the hardware, or are configured by the driver, but I'm guessing the former, as the register numbers are constant, unlike the uniform registers.</p>
