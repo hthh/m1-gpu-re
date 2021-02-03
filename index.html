@@ -40,6 +40,38 @@ Instructions with 64-bit, 96-bit, or 128-bit register operands use consecutive 3
 </p>
 
 
+<h2>Register Cache</h2>
+
+<p>
+As the register file and registers are very large, a cache is used to keep register contents nearby. This is exposed in the ISA with two hints. The <strong>cache</strong>  hint (on a source or destination register operand) indicates that a register will be used again soon,
+and needn't be written back to the register file immediately. The <strong>discard</strong> hint (on a source operand) indicates that the current value of the register needn't be written back to the register file at all, and may be discarded after the current instruction.
+</p>
+
+<p>The following example code indicates <strong>cache</strong> with "$" and <strong>discard</strong> with "%". This example indicates that the both hints should be used multiple times when the register appears as a source multiple times,
+and that the <strong>discard</strong> hint should be used even when the destination matches the source. The "store" instruction appears not to benefit from the register-cache, but behaves correctly if operands are cached.</p>
+
+<pre>
+ mov    $r1, sr80
+ mov    $r0, sr81
+ add    $r0, %r0, %r1
+ add    r1, $r0, $r0 lsl 1
+ add    r2, %r0, %r0 lsl 3
+ mov    r3, u6
+ mov    r0, 0
+ store  r0_r1_r2, u0_u1, r3, lsl 2
+</pre>
+
+<p>For many operations with a destination operand (excluding loads and stores), the destination <strong>cache</strong> hint is typically encoded in bit 7.</p>
+
+<p>For source operands, a field labeled as "!= 0" indicates the source is a register. This may be decoded as follows:
+<pre>
+0b01: no hint
+0b10: cache hint
+0b11: discard hint
+</pre>
+</p>
+
+
 
 <h1>Instructions</h1>
 <p>Instructions are variable length, multiples of 2 bytes, up to ~10 bytes. They are written as little-endian, so bit 7 denotes the 0x80 bit of the first byte, and bit 8 denotes the 1 bit of the second byte. The right-to-left encoding seemed good at the time. It's nice that binary sequences can be read in the usual numeric way. I'm not sure.</p>
@@ -167,7 +199,7 @@ else:
 <p>mod:type encoding:</p><pre>
 
 00000 = immediate (see float_imm)
-00001 = reg
+00001 = reg (low two bits are source hint field)
 0010e = ureg (e=high bit)
 01001 = abs(reg)
 10001 = -reg
