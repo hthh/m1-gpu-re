@@ -72,7 +72,23 @@ source operand cache hint:
 </pre>
 </p>
 
-
+<p>Stale values after the <strong>discard</strong> hint may be observed as follows:
+<pre>
+6205ad0b0000      mov      r1, 0xBAD
+622500000000      mov      r9, 0
+622900000000      mov      r10, 0
+622d00000000      mov      r11, 0
+623100000000      mov      r12, 0
+623500000000      mov      r13, 0
+623900000000      mov      r14, 0
+623d00000000      mov      r15, 0
+624100000000      mov      r16, 0
+e20533030000      mov      $r1, 0x333
+0e11c20200000000  add      r4, %r1, 0
+0e0d420200000000  add      r3, r1, 0
+</pre>
+This leaves 0xBAD in both r1 and r3 (but 0x333 in r4). Eight writes to other distinct registers were needed to flush the 0xBAD value, or an older value would be used, but this was the minimum number, so more may be needed to reproduce in different circumstances.
+Stale values are observed regardless of whether or not the <strong>cache</strong> hint is present on the 0x333 move.</p>
 
 <h1>Instructions</h1>
 <p>Instructions are variable length, multiples of 2 bytes, up to ~10 bytes. They are written as little-endian, so bit 7 denotes the 0x80 bit of the first byte, and bit 8 denotes the 1 bit of the second byte. The right-to-left encoding seemed good at the time. It's nice that binary sequences can be read in the usual numeric way. I'm not sure.</p>
