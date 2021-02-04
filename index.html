@@ -15,7 +15,7 @@ The Apple M1 GPU ISA state consists of general purpose SIMD registers (per-simd-
 </p>
 
 <p>
-Instructions can reference up to 128 32-bit register, known as r0-r128, or 256 16-bit registers (the lower and upper halves of the 32-bit registers, r0l, r0h, throught to r127h). It uses a SIMD width of 32, so r0 generally refers to 32 32-bit values, and r0l refers to 32 16-bit registers.
+Instructions can reference up to 128 32-bit register, known as r0-r128, or 256 16-bit registers (the lower and upper halves of the 32-bit registers, r0l, r0h, through to r127h). It uses a SIMD width of 32, so r0 generally refers to 32 32-bit values, and r0l refers to 32 16-bit registers.
 </p>
 
 <p>
@@ -44,7 +44,7 @@ Instructions with 64-bit, 96-bit, or 128-bit register operands use consecutive 3
 
 <p>
 As the register file and registers are very large, a cache is used to keep register contents nearby. This is exposed in the ISA with two hints. The <strong>cache</strong> hint (on a source or destination register operand) indicates that a register will be used again soon,
-and caching it should be prefered. If no hints are used, register writes still go to the cache. These non-hinted writes will be evicted more readily than writes using the <strong>cache</strong> hint.
+and caching it should be preferred. If no hints are used, register writes still go to the cache. These non-hinted writes will be evicted more readily than writes using the <strong>cache</strong> hint.
 The <strong>discard</strong> hint (on a source operand) indicates that the current value of the register needn't be written back to the register file at all, and may be discarded after the current instruction.
 </p>
 
@@ -108,7 +108,7 @@ e23100000000      mov      $r12, 0
 0e11c20200000000  add      r4, %r1, 0
 0e0d420200000000  add      r3, r1, 0
 </pre>
-Using the <strong>cache</strong> hint on a source operand instead of the hinted movs does not lead to 0xBAD, but using an unhinted destination followed by a hinted source gives 0xBAD, probably because clean values are prefered for eviction.
+Using the <strong>cache</strong> hint on a source operand instead of the hinted movs does not lead to 0xBAD, but using an unhinted destination followed by a hinted source gives 0xBAD, probably because clean values are preferred for eviction.
 </p>
 
 <p>TODO: Unhinted register reads may or may not be cached - investigation is needed. The <strong>discard</strong> hint appears to immediately invalidate the cached value - it's not clear if this behaviour is guaranteed,
@@ -157,7 +157,7 @@ d := a + (c &lt;&lt; shift)
 </pre>
 
 <h2>madd</h2>
-<p><strong>madd</strong> performs a 32-bit or 16-bit integer multipy-add (a * b + c) or multiply-subtract operation (a * b - c). The final operand (c) may also be shifted left by 1 to 4. This can do 32x32->64 bit multiplies, but a multi-instruction sequence is used for 32x64 and 64x64 multiplies.</p>
+<p><strong>madd</strong> performs a 32-bit or 16-bit integer multiply-add (a * b + c) or multiply-subtract operation (a * b - c). The final operand (c) may also be shifted left by 1 to 4. This can do 32x32->64 bit multiplies, but a multi-instruction sequence is used for 32x64 and 64x64 multiplies.</p>
 <p>TODO: pseudocode is probably wrong for 64-bit.</p>
 <table class="opcodebits"><thead><tr><td class="left">63</td><td>62</td><td>61</td><td>60</td><td>59</td><td>58</td><td>57</td><td class="right">56</td><td class="left">55</td><td>54</td><td>53</td><td>52</td><td>51</td><td>50</td><td>49</td><td class="right">48</td><td class="left">47</td><td>46</td><td>45</td><td>44</td><td>43</td><td>42</td><td>41</td><td class="right">40</td><td class="left">39</td><td>38</td><td>37</td><td>36</td><td>35</td><td>34</td><td>33</td><td class="right">32</td><td class="left">31</td><td>30</td><td>29</td><td>28</td><td>27</td><td>26</td><td>25</td><td class="right">24</td><td class="left">23</td><td>22</td><td>21</td><td>20</td><td>19</td><td>18</td><td>17</td><td class="right">16</td><td class="left">15</td><td>14</td><td>13</td><td>12</td><td>11</td><td>10</td><td>9</td><td class="right">8</td><td class="left">7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td class="right">0</td></tr></thead><tbody><tr><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="2" class="left right">dstx</td><td colspan="2" class="left right">src1x</td><td colspan="2" class="left right">src2x</td><td colspan="2" class="left right">src3x</td><td colspan="2" class="left right">s2</td><td colspan="1" class="left right">?</td><td colspan="11" class="left right">src3</td><td colspan="1" class="left right">s1</td><td colspan="11" class="left right">src2</td><td colspan="1" class="left right">n</td><td colspan="11" class="left right">src1</td><td colspan="1" class="left right">0</td><td colspan="7" class="left right">dst</td><td colspan="1" class="left right">dh</td><td colspan="1" class="left">0</td><td colspan="1" class="">0</td><td colspan="1" class="">1</td><td colspan="1" class="">1</td><td colspan="1" class="">1</td><td colspan="1" class="">1</td><td colspan="1" class="right">0</td></tr></tbody></table>
 
@@ -376,7 +376,7 @@ branch_to(reg32)
 
 <h2>ret</h2>
 <p><strong>ret</strong> branches to the address in the given 32-bit register (typically r1)</p>
-<p>TODO: predictor/disassembler hint, or different behavior from branch?</p>
+<p>TODO: predictor/disassembler hint, or different behaviour from branch?</p>
 <p>TODO: what happens if the simd register contains different values?</p>
 <table class="opcodebits"><thead><tr><td class="left">15</td><td>14</td><td>13</td><td>12</td><td>11</td><td>10</td><td>9</td><td class="right">8</td><td class="left">7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td class="right">0</td></tr></thead><tbody><tr><td colspan="7" class="left right">reg32</td><td colspan="1" class="left right">?</td><td colspan="1" class="left right">?</td><td colspan="1" class="left">0</td><td colspan="1" class="">0</td><td colspan="1" class="">1</td><td colspan="1" class="">0</td><td colspan="1" class="">1</td><td colspan="1" class="">0</td><td colspan="1" class="right">0</td></tr></tbody></table>
 
@@ -439,7 +439,7 @@ Unsigned immediate from concatenation: h:imm</p>
 <table class="opcodebits"><thead><tr><td>11</td><td>10</td><td class="left">9</td><td class="left">8</td><td>7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td>0</td></tr></thead><tbody><tr><td colspan="2" class="left right">h</td><td colspan="1" class="left right">0</td><td colspan="1" class="left">1</td><td colspan="1" class="right">1</td><td colspan="1" class="left right">e</td><td colspan="6" class="left right">ureg16</td></tr></tbody></table>
 <table class="opcodebits"><thead><tr><td>11</td><td>10</td><td class="left">9</td><td class="left">8</td><td>7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td>0</td></tr></thead><tbody><tr><td colspan="2" class="left right">h</td><td colspan="1" class="left right">1</td><td colspan="1" class="left">1</td><td colspan="1" class="right">1</td><td colspan="1" class="left right">e</td><td colspan="5" class="left right">ureg32</td><td colspan="1" class="left right">?</td></tr></tbody></table>
 <h2>float_imm</h2>
-<p>8-bit foating-point immediates use a custom floating point format, with a sign bit, a 3-bit exponent (bias=3), and a 4 bit fraction:</p>
+<p>8-bit floating-point immediates use a custom floating point format, with a sign bit, a 3-bit exponent (bias=3), and a 4 bit fraction:</p>
 <table class="opcodebits"><thead><tr><td>7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td><td>0</td></tr></thead><tbody><tr><td colspan="1" class="left right">s</td><td colspan="3" class="left right">exp</td><td colspan="4" class="left right">fraction</td></tr></tbody></table>
 There is no NaN/Infinity (exponent=7 is treated like any other), but there are sub-normals (when exponent=0), such that 0b00000001 = 0.015625 and 0b00000000 = 0.
 <h2>float_modifier</h2>
